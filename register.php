@@ -1,3 +1,13 @@
+<?php
+session_start(); // Start or resume the session
+
+// After successful submission
+$_SESSION['alert'] = "Form submitted successfully!";
+
+// In case of an error
+$_SESSION['alert'] = "An error occurred. Please try again.";
+
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,6 +25,17 @@
                         <h3>Register</h3>
                     </div>
                     <div class="card-body bg-body-secondary">
+                    <div id="alertDiv" class="alert 
+                    <?php echo isset($_SESSION['alert']) ? 'alert-success' : 'd-none'; ?>
+                    " role="alert">
+                        <?php
+                        if (isset($_SESSION['alert'])) {
+                            echo $_SESSION['alert'];
+                            unset($_SESSION['alert']); // Clear the session variable
+                        }
+                        ?>
+                        
+                    </div>
                     <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">
                             <div class="form-group row mt-2 mb-2">
                                 <label for="name" class="col-sm-3 col-form-label">Name</label>
@@ -55,43 +76,42 @@
                                 </div>
                             </div>
                             <?php
-$servername = "localhost";
-$username = "root";
-$dbpassword = "";
-$database = "auth";
+                            $servername = "localhost";
+                            $username = "root";
+                            $dbpassword = "";
+                            $database = "auth";
 
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
+                            if ($_SERVER["REQUEST_METHOD"] == "POST") {
+                                $name = $_POST['name'];
+                                $phone = $_POST['phone'];
+                                $email = $_POST['email'];
+                                $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-    if (!empty($name)) {
-        try {
-            $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                                if (!empty($name)) {
+                                    try {
+                                        $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
+                                        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            $sql = "INSERT INTO users (name, phone, email, password) 
-            VALUES (:name, :phone, :email, :password)";
-            $stmt = $conn->prepare($sql);
+                                        $sql = "INSERT INTO users (name, phone, email, password) 
+                                        VALUES (:name, :phone, :email, :password)";
+                                        $stmt = $conn->prepare($sql);
 
-            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-            $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-            $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+                                        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                                        $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
+                                        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+                                        $stmt->bindParam(':password', $password, PDO::PARAM_STR);
 
-            $stmt->execute();
+                                        $stmt->execute();
 
-            echo "Data inserted successfully";
-        } catch (PDOException $e) {
-            echo "Error: " . $e->getMessage();
-        }
-    } else {
-        echo "Name field cannot be empty.";
-    }
-}
-?>
-
+                                        
+                                    } catch (PDOException $e) {
+                                        echo "Error: " . $e->getMessage();
+                                    }
+                                } else {
+                                    echo "Name field cannot be empty.";
+                                }
+                            }
+                            ?>
                         </form>
                     </div>
                 </div>
