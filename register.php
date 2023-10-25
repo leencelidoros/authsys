@@ -1,9 +1,77 @@
 <?php
 session_start();
-$_SESSION['alert'] = "Form submitted successfully!";
-$_SESSION['alert'] = "An error occurred. Please try again.";
+include 'functions.php';
 
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = $_POST['name'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
+    $password = $_POST['password'];
+    $confirmPassword = $_POST['confirmPassword'];
+
+    // Validate user input
+    $nameError = isNotEmpty($name, 'Name');
+    $emailError = isValidEmail($email);
+    $passwordError = isStrongPassword($password);
+
+    // Validate phone number
+    $phoneError = validatePhoneNumber($phone);
+
+    if ($nameError || $emailError || $passwordError || $password !== $confirmPassword || $phoneError) {
+        $_SESSION['alert'] = "Registration failed. Please check your input.";
+    } else {
+        // Validation passed, check if the email and phone already exist in the database.
+        $servername = "localhost";
+        $username = "root";
+        $dbpassword = "";
+        $database = "auth";
+
+        try {
+            $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
+            $stmt = $conn->prepare($checkEmailSQL);
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+            $stmt->execute();
+            
+            $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
+            $stmtPhone = $conn->prepare($checkPhoneSQL);
+            $stmtPhone->bindParam(':phone', $phone, PDO::PARAM_STR);
+            $stmtPhone->execute();
+
+            if ($stmt->rowCount() > 0) {
+              
+                $_SESSION['alert'] = "Email is already taken. Please choose another email.";
+            } elseif ($stmtPhone->rowCount() > 0) {
+                $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
+            } else {
+                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+                $formattedPhone = '254' . substr($phone, -9); 
+
+                $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
+                $stmt = $conn->prepare($insertSQL);
+
+                $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                $stmt->bindParam(':phone', $formattedPhone, PDO::PARAM_STR);
+                $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+                $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+
+                $stmt->execute();
+
+                $_SESSION['alert'] = "Registration successful!";
+                header("Location: login.php"); 
+                exit();
+            }
+        } catch (PDOException $e) {
+            $_SESSION['alert'] = "An error occurred. Please try again.";
+        }
+    }
+}
 ?>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -27,7 +95,7 @@ $_SESSION['alert'] = "An error occurred. Please try again.";
                         <?php
                         if (isset($_SESSION['alert'])) {
                             echo $_SESSION['alert'];
-                            unset($_SESSION['alert']); // Clear the session variable
+                            unset($_SESSION['alert']); 
                         }
                         ?>
                         
@@ -71,43 +139,6 @@ $_SESSION['alert'] = "An error occurred. Please try again.";
                                     <a href="/login.php" class="link-info">Already have an Account .Click here to login</a>
                                 </div>
                             </div>
-                            <?php
-                            $servername = "localhost";
-                            $username = "root";
-                            $dbpassword = "";
-                            $database = "auth";
-
-                            if ($_SERVER["REQUEST_METHOD"] == "POST") {
-                                $name = $_POST['name'];
-                                $phone = $_POST['phone'];
-                                $email = $_POST['email'];
-                                $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-                                if (!empty($name)) {
-                                    try {
-                                        $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
-                                        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-                                        $sql = "INSERT INTO users (name, phone, email, password) 
-                                        VALUES (:name, :phone, :email, :password)";
-                                        $stmt = $conn->prepare($sql);
-
-                                        $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-                                        $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
-                                        $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                                        $stmt->bindParam(':password', $password, PDO::PARAM_STR);
-
-                                        $stmt->execute();
-
-                                        
-                                    } catch (PDOException $e) {
-                                        echo "Error: " . $e->getMessage();
-                                    }
-                                } else {
-                                    echo "Name field cannot be empty.";
-                                }
-                            }
-                            ?>
                         </form>
                     </div>
                 </div>

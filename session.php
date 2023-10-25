@@ -1,11 +1,7 @@
 <?php
-// Start or resume the session
 session_start();
 
-// Set session timeout (optional)
-// Adjust the timeout value based on your needs
-// The example sets a session timeout to 30 minutes
-$sessionTimeout = 30 * 60; // 30 minutes
+$sessionTimeout = 30 * 60; 
 if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $sessionTimeout)) {
     // Session has expired, clear it
     session_unset();
@@ -31,10 +27,6 @@ function displayAlert() {
     }
 }
 
-// Additional session-related functions or configurations can go here
-// ...
-
-// Example: function to check if a user is logged in
 function isUserLoggedIn() {
     return isset($_SESSION['user_id']);
 }

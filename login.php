@@ -1,14 +1,10 @@
 <?php
 session_start();
-setcookie("email", $email, time() + 3600, "/");
-
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = $_POST['email'];
     $enteredPassword = $_POST['password'];
 
     try {
-
         $servername = "localhost";
         $username = "root";
         $dbpassword = "";
@@ -24,19 +20,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $userData = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($userData) {
-    
             if (password_verify($enteredPassword, $userData['password'])) {
-                // Set a session variable 
+                // Set a session variable
                 $_SESSION['user'] = $userData['email'];
                 $_SESSION['user_name'] = $userData['name'];
-        
+
+                if (isset($_POST['remember_me'])) {
+                    
+                    // If "Remember Me" is checked, set a cookie with the email.
+                    setcookie("email", $enteredEmail, time() + 30 * 24 * 3600, "/");
+                
+                }
+                var_dump($_POST);
                 header("Location: home.php");
                 exit();
             } else {
                 $errorMessage = "Invalid password. Please try again.";
             }
-            $_SESSION['user'] = $userData['email'];
-
         } else {
             $errorMessage = "User not found. Please try again.";
         }
@@ -45,6 +45,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -72,14 +73,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
                             <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" value="" id="flexCheckDefault">
-                                <label class="form-check-label" for="flexCheckDefault">
+                                <input class="form-check-input" type="checkbox" name="remember_me" id="remember_me">
+                                <label class="form-check-label" for="remember_me">
                                     Remember Me
                                 </label>
                             </div>
-                            <button type="submit" class="btn btn-primary btn-block ">Login</button>
+                            <button type="submit" class="btn btn-primary btn-block">Login</button>
                             <div class="col-sm-9 offset-sm-3">
-                                    <a href="/register.php" class="link-info">Dont have an account .Click here to Register</a>
+                                <a href="/register.php" class="link-info">Don't have an account? Click here to Register</a>
                             </div>
                         </form>
                         <?php if (isset($errorMessage)) {
