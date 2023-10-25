@@ -1,10 +1,6 @@
 <?php
-session_start(); // Start or resume the session
-
-// After successful submission
+session_start();
 $_SESSION['alert'] = "Form submitted successfully!";
-
-// In case of an error
 $_SESSION['alert'] = "An error occurred. Please try again.";
 
 ?>
