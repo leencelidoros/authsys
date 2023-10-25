@@ -55,26 +55,43 @@
                                 </div>
                             </div>
                             <?php
-                            $servername = "localhost";
-                            $username = "root";
-                            $dbpassword = "";
-                            $dbname = "auth";
+$servername = "localhost";
+$username = "root";
+$dbpassword = "";
+$database = "auth";
 
-                            try {
-                            $conn = new PDO("mysql:host=$servername;auth=$dbname", $username, $dbpassword);
-                            // set the PDO error mode to exception
-                            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                            $sql = "INSERT INTO auth(name, phone, email,password)
-                            VALUES ('name','phone','email','password')";
-                            // use exec() because no results are returned
-                            $conn->exec($sql);
-                            echo "New record created successfully";
-                            } catch(PDOException $e) {
-                            echo $sql . "<br>" . $e->getMessage();
-                            }
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $name = $_POST['name'];
+    $phone = $_POST['phone'];
+    $email = $_POST['email'];
+    $password = password_hash($_POST['password'], PASSWORD_DEFAULT);
 
-                            $conn = null;
-                            ?>
+    if (!empty($name)) {
+        try {
+            $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
+            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "INSERT INTO users (name, phone, email, password) 
+            VALUES (:name, :phone, :email, :password)";
+            $stmt = $conn->prepare($sql);
+
+            $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+            $stmt->bindParam(':phone', $phone, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+            $stmt->bindParam(':password', $password, PDO::PARAM_STR);
+
+            $stmt->execute();
+
+            echo "Data inserted successfully";
+        } catch (PDOException $e) {
+            echo "Error: " . $e->getMessage();
+        }
+    } else {
+        echo "Name field cannot be empty.";
+    }
+}
+?>
+
                         </form>
                     </div>
                 </div>
