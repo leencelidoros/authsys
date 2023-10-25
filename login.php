@@ -1,5 +1,7 @@
 <?php
 session_start();
+setcookie("email", $email, time() + 3600, "/");
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = $_POST['email'];
@@ -26,13 +28,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (password_verify($enteredPassword, $userData['password'])) {
                 // Set a session variable 
                 $_SESSION['user'] = $userData['email'];
-
+                $_SESSION['user_name'] = $userData['name'];
         
                 header("Location: home.php");
                 exit();
             } else {
                 $errorMessage = "Invalid password. Please try again.";
             }
+            $_SESSION['user'] = $userData['email'];
+
         } else {
             $errorMessage = "User not found. Please try again.";
         }
