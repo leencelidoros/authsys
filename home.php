@@ -35,28 +35,39 @@ $userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
+    
     <link rel="stylesheet" href="./css/bootstrap.min.css">
 </head>
 <body>
     <div class="container">
         <div class="row">
-            <div class="card">
-                <div class="card-body">
-                <h2>All Users</h2>
-    <table class="table table-bordered border-primary">
-        <tr>
-            <th>Name</th>
-            <th>Phone</th>
-            <th>Email</th>
-        </tr>
-        <?php foreach ($userData as $user) { ?>
-            <tr>
-                <td><?php echo $user['name']; ?></td>
-                <td><?php echo $user['phone']; ?></td>
-                <td><?php echo $user['email']; ?></td>
-            </tr>
-        <?php } ?>
-    </table>
+            <div class="col-md-10 offset-md-2">
+                <!-- User profile section at top right -->
+                <div class="user-profile text-center">
+                    <img src="./images/avatar.jpg" alt="User Avatar" height=100 width=100 class="img-fluid rounded-circle">
+                    <p class="h5 text-primary"><?php echo $_SESSION['user_name']; ?></h4>
+                    <a href="logout.php" class="btn btn-danger btn-sm">Sign Out</a>
+                </div>
+            </div>
+            <div class="col-md-10">
+                <div class="card">
+                    <div class="card-body">
+                        <h2>All Users</h2>
+                        <table class="table table-bordered border-primary">
+                            <tr>
+                                <th>Name</th>
+                                <th>Phone</th>
+                                <th>Email</th>
+                            </tr>
+                            <?php foreach ($userData as $user) { ?>
+                                <tr>
+                                    <td><?php echo $user['name']; ?></td>
+                                    <td><?php echo $user['phone']; ?></td>
+                                    <td><?php echo $user['email']; ?></td>
+                                </tr>
+                            <?php } ?>
+                        </table>
+                    </div>
                 </div>
             </div>
         </div>
