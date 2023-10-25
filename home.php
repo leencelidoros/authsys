@@ -1,20 +1,16 @@
 <?php
 session_start();
 
-// Check if the user is logged in
 if (!isset($_SESSION['user'])) {
-    // Redirect to the login page or display a message
     header("Location: login.php");
     exit();
 }
 
-// Database connection information
 $servername = "localhost";
 $username = "root";
 $dbpassword = "";
 $database = "auth";
 
-// Create a PDO database connection
 try {
     $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
@@ -22,7 +18,6 @@ try {
     echo "Error: " . $e->getMessage();
 }
 
-// Retrieve user data from the database
 $sql = "SELECT name, phone ,email FROM users";
 $stmt = $conn->prepare($sql);
 $stmt->execute();
@@ -42,7 +37,6 @@ $userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <div class="container">
         <div class="row">
             <div class="col-md-10 offset-md-2">
-                <!-- User profile section at top right -->
                 <div class="user-profile text-center">
                     <img src="./images/avatar.jpg" alt="User Avatar" height=100 width=100 class="img-fluid rounded-circle">
                     <p class="h5 text-primary"><?php echo $_SESSION['user_name']; ?></h4>
@@ -53,6 +47,7 @@ $userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 <div class="card">
                     <div class="card-body">
                         <h2>All Users</h2>
+                        <a href="report-gen.php" class="btn btn-primary">Generate User Report</a>
                         <table class="table table-bordered border-primary">
                             <tr>
                                 <th>Name</th>
