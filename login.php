@@ -1,6 +1,9 @@
+
 <?php
 session_start();
+require 'session.php';
 include 'functions.php';
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = $_POST['email'];
     $enteredPassword = $_POST['password'];
@@ -22,28 +25,26 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             if (password_verify($enteredPassword, $userData['password'])) {
                 $_SESSION['user'] = $userData['email'];
                 $_SESSION['user_name'] = $userData['name'];
-                $authenticated = true; 
+                $_SESSION['user_id'] = $userData['id']; // Set the user_id correctly
 
-                if ($authenticated) {
-                    $_SESSION['user_id'] = $user_id;
+                if (isset($_POST['remember_me'])) {
+                    // Generate a secure token
+                    $token = bin2hex(random_bytes(32));
 
-                    if ($_POST['remember_me']) {
-                        // secure token
-                        $token = bin2hex(random_bytes(32)); 
-                        storeActivityInDatabase($userData['id'], 'Logged In', $_SERVER['REMOTE_ADDR']);
-                        // Set the "Remember Me" cookies
-                        setcookie('user_id', $user_id, time() + 3600 * 24 * 30, '/', null, true, true);
-                        setcookie('token', $token, time() + 3600 * 24 * 30, '/', null, true, true);
+                    // Replace storeActivityInDatabase with your actual function
+                    storeActivityInDatabase($userData['id'], '', 'Logged In', $_SERVER['REMOTE_ADDR']);
+                    // Set the "Remember Me" cookies with the correct variable names
+                    setcookie('user_id', $userData['id'], time() + 3600 * 24 * 30, '/', null, true, true);
+                    setcookie('token', $token, time() + 3600 * 24 * 30, '/', null, true, true);
 
-                        // store cookie in hmac
-                        $hmacKey = 'your_secret_key'; 
-                        $hmac = hash_hmac('sha256', $user_id . $token, $hmacKey);
-                        setcookie('auth', $hmac, time() + 3600 * 24 * 30, '/', null, true, true); 
-                    }
-
-                    header("Location: home.php");
-                    exit();
+                    // Calculate the HMAC of the token and user ID and store it in a cookie
+                    $hmacKey = 'your_secret_key';
+                    $hmac = hash_hmac('sha256', $userData['id'] . $token, $hmacKey);
+                    setcookie('auth', $hmac, time() + 3600 * 24 * 30, '/', null, true, true);
                 }
+
+                header("Location: home.php");
+                exit();
             } else {
                 $errorMessage = "Invalid password. Please try again.";
             }
@@ -54,7 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "Error: " . $e->getMessage();
     }
 }
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

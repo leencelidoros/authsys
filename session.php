@@ -1,21 +1,26 @@
 <?php
-session_start();
-
+include 'functions.php';
 $sessionTimeout = 30 * 60; 
 if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $sessionTimeout)) {
-    // Session has expired, clear it
     session_unset();
     session_destroy();
 }
 $_SESSION['LAST_ACTIVITY'] = time();
 
-// Function to set an alert message in the session
+if (isset($_COOKIE['authid']) && !isset($_SESSION['user'])) {
+    $authid = $_COOKIE['authid'];
+    $user = getUserByAuthId($authid);
+
+    if ($user) {
+        $_SESSION['user'] = $user['email'];
+        $_SESSION['user_name'] = $user['name'];
+        $_SESSION['user_pass'] =$user['password'];
+}
 function setAlert($message, $type = 'info') {
     $_SESSION['alert']['message'] = $message;
     $_SESSION['alert']['type'] = $type;
 }
 
-// Function to display and clear the alert message
 function displayAlert() {
     if (isset($_SESSION['alert']['message'])) {
         $message = $_SESSION['alert']['message'];
@@ -29,4 +34,5 @@ function displayAlert() {
 
 function isUserLoggedIn() {
     return isset($_SESSION['user_id']);
+}
 }

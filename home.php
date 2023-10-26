@@ -1,5 +1,7 @@
 <?php
 session_start();
+require 'session.php';
+include 'functions.php';
 
 if (!isset($_SESSION['user'])) {
     header("Location: login.php");
@@ -67,6 +69,6 @@ $userData = $stmt->fetchAll(PDO::FETCH_ASSOC);
             </div>
         </div>
     </div>
-    <script src="js/bootstrap.min.bundle.js"></script>
+    <script src="js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
