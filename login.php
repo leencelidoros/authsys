@@ -1,5 +1,6 @@
 <?php
 session_start();
+include 'functions.php';
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = $_POST['email'];
     $enteredPassword = $_POST['password'];
@@ -11,8 +12,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $database = "auth";
 
         $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
-        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
         $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
         $stmt->bindParam(':email', $enteredEmail);
         $stmt->execute();
@@ -21,19 +20,30 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($userData) {
             if (password_verify($enteredPassword, $userData['password'])) {
-                
                 $_SESSION['user'] = $userData['email'];
                 $_SESSION['user_name'] = $userData['name'];
+                $authenticated = true; 
 
-                if (isset($_POST['remember_me'])) {
-                    
-                    
-                    setcookie("email", $enteredEmail, time() + 30 * 24 * 3600, "/");
-                
+                if ($authenticated) {
+                    $_SESSION['user_id'] = $user_id;
+
+                    if ($_POST['remember_me']) {
+                        // secure token
+                        $token = bin2hex(random_bytes(32)); 
+                        storeActivityInDatabase($userData['id'], 'Logged In', $_SERVER['REMOTE_ADDR']);
+                        // Set the "Remember Me" cookies
+                        setcookie('user_id', $user_id, time() + 3600 * 24 * 30, '/', null, true, true);
+                        setcookie('token', $token, time() + 3600 * 24 * 30, '/', null, true, true);
+
+                        // store cookie in hmac
+                        $hmacKey = 'your_secret_key'; 
+                        $hmac = hash_hmac('sha256', $user_id . $token, $hmacKey);
+                        setcookie('auth', $hmac, time() + 3600 * 24 * 30, '/', null, true, true); 
+                    }
+
+                    header("Location: home.php");
+                    exit();
                 }
-                var_dump($_POST);
-                header("Location: home.php");
-                exit();
             } else {
                 $errorMessage = "Invalid password. Please try again.";
             }
@@ -72,11 +82,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label for="password">Password</label>
                                 <input type="password" class="form-control" id="password" name="password" required>
                             </div>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" name="remember_me" id="remember_me">
-                                <label class="form-check-label" for="remember_me">
-                                    Remember Me
-                                </label>
+                            <div class="form-group mb-2">
+                                <label for="rememberMe" class="col-sm-3 col-form-label">Remember Me</label>
+                                <div class="col-sm-9">
+                                    <input type="checkbox" class="form-check-input" id="rememberMe" name="remember_me">
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary btn-block">Login</button>
                             <div class="col-sm-9 offset-sm-3">
