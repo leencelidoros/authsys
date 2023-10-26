@@ -1,7 +1,6 @@
 <?php
-session_start();
 require 'session.php';
-include 'functions.php';
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = $_POST['email'];
@@ -22,22 +21,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($userData) {
             if (password_verify($enteredPassword, $userData['password'])) {
-                $_SESSION['user'] = $userData['email'];
-                $_SESSION['user_name'] = $userData['name'];
-                $_SESSION['user_pass'] =$userData['password'];
-                $_SESSION['user_id'] = $userData['id'];
+                $_SESSION['user'] = $userData;
+            
 
                 if (isset($_POST['remember_me'])) {
                     // Generate a secure token
-                    $token = bin2hex(random_bytes(32));
-                    storeActivityInDatabase($userData['id'], '', 'Logged In', $_SERVER['REMOTE_ADDR']);
-                    setcookie('user_id', $userData['id'], time() + 3600 * 24 * 30, '/', null, true, true);
-                    setcookie('token', $token, time() + 3600 * 24 * 30, '/', null, true, true);
-
-
-                    $hmacKey = 'your_secret_key';
-                    $hmac = hash_hmac('sha256', $userData['id'] . $token, $hmacKey);
-                    setcookie('auth', $hmac, time() + 3600 * 24 * 30, '/', null, true, true);
+                    setcookie('authid', encrypt($userData['email'], 'qwerty'), time() + 3600 * 24 * 30, '/', null, true, true);
                 }
 
                 header("Location: home.php");

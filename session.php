@@ -1,38 +1,37 @@
 <?php
+
+session_start();
 include 'functions.php';
-$sessionTimeout = 30 * 60; 
-if (isset($_SESSION['LAST_ACTIVITY']) && (time() - $_SESSION['LAST_ACTIVITY'] > $sessionTimeout)) {
-    session_unset();
-    session_destroy();
-}
-$_SESSION['LAST_ACTIVITY'] = time();
-
 if (isset($_COOKIE['authid']) && !isset($_SESSION['user'])) {
-    $authid = $_COOKIE['authid'];
-    $user = getUserByAuthId($authid);
+    $encyptedcookie = $_COOKIE['authid'];
+    $authid = decrypt($encyptedcookie, 'qwerty');
 
-    if ($user) {
-        $_SESSION['user'] = $user['email'];
-        $_SESSION['user_name'] = $user['name'];
-        $_SESSION['user_pass'] =$user['password'];
-}
-function setAlert($message, $type = 'info') {
-    $_SESSION['alert']['message'] = $message;
-    $_SESSION['alert']['type'] = $type;
-}
+    $servername = "localhost";
+        $username = "root";
+        $dbpassword = "";
+        $database = "auth";
 
-function displayAlert() {
-    if (isset($_SESSION['alert']['message'])) {
-        $message = $_SESSION['alert']['message'];
-        $type = $_SESSION['alert']['type'];
+        $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
+        $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
+        $stmt->bindParam(':email', $authid);
+        $stmt->execute();
 
-        echo '<div class="alert alert-' . $type . '">' . $message . '</div>';
-        
-        unset($_SESSION['alert']);
-    }
+        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($userData) {
+            $_SESSION['user'] = $userData;
+        }
 }
 
-function isUserLoggedIn() {
-    return isset($_SESSION['user_id']);
+//if user is logged in (has a session) and is tryng to access a guest page, redirect to home page
+if (isset($_SESSION['user']) && ($_SERVER['SCRIPT_NAME']  == '/login.php' || $_SERVER['SCRIPT_NAME']  == '/register.php')) {
+    header("Location: home.php");
+    exit();
 }
+
+if (!isset($_SESSION['user']) && ($_SERVER['SCRIPT_NAME']  == '/home.php' || $_SERVER['SCRIPT_NAME']  == '/logout.php')) {
+    header("Location: login.php");
+    exit();
 }
+
+

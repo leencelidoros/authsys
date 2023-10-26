@@ -28,15 +28,17 @@ if (!function_exists('isStrongPassword')) {
 if (!function_exists('normalizePhoneNumber')) {
     function normalizePhoneNumber($phone) {
         $phone = preg_replace('/\D/', '', $phone);
-        if (substr($phone, 0, 1) === '0') {
-            $phone = '254' . substr($phone, 1);
-        } elseif (substr($phone, 0, 1) === '+') {
-            $phone = '254' . substr($phone, 1);
+
+        // If the phone number starts with "254" or "+254", keep it as is
+        if (substr($phone, 0, 3) === '254' || substr($phone, 0, 4) === '+254') {
+            return $phone;
         }
 
-        return $phone;
+        // If it doesn't start with "254" or "+254", add "254" as the prefix
+        return '254' . $phone;
     }
 }
+
 
 if (!function_exists('storeActivityInDatabase')) {
     function storeActivityInDatabase($user_id, $token, $activity, $ip_address) {
@@ -60,4 +62,56 @@ if (!function_exists('storeActivityInDatabase')) {
         }
     }
 }
+
+
+function encrypt($data, $key) {
+    $method = 'aes-256-cbc';
+    $iv = openssl_random_pseudo_bytes(openssl_cipher_iv_length($method));
+    $encrypted = openssl_encrypt($data, $method, $key, 0, $iv);
+    return base64_encode($iv . $encrypted);
+}
+
+// Function to decrypt data
+function decrypt($data, $key) {
+    $method = 'aes-256-cbc';
+    $data = base64_decode($data);
+    $iv = substr($data, 0, openssl_cipher_iv_length($method));
+    return openssl_decrypt(substr($data, openssl_cipher_iv_length($method)), $method, $key, 0, $iv);    
+}
+
+function setAlert($message, $type = 'info') {
+    $_SESSION['alert']['message'] = $message;
+    $_SESSION['alert']['type'] = $type;
+}
+
+function displayAlert() {
+    if (isset($_SESSION['alert']['message'])) {
+        $message = $_SESSION['alert']['message'];
+        $type = $_SESSION['alert']['type'];
+
+        echo '<div class="alert alert-' . $type . '">' . $message . '</div>';
+        
+        unset($_SESSION['alert']);
+    }
+}
+
+function isUserLoggedIn() {
+    return isset($_SESSION['user_id']);
+}
+function cleanUserTable($userTable) {
+    $cleanedData = [];
+
+    foreach ($userTable as $user) {
+        $cleanedUser = [];
+        $cleanedUser['name'] = filter_var($user['name'], FILTER_SANITIZE_STRING);
+        $cleanedUser['phone'] = preg_replace("/[^0-9]/", "", $user['phone']);
+        $cleanedUser['email'] = filter_var($user['email'], FILTER_SANITIZE_EMAIL);
+        $cleanedUser['password'] = password_hash($user['password'], PASSWORD_DEFAULT);
+        $cleanedData[] = $cleanedUser;
+    }
+
+    return $cleanedData;
+}
+
+
 ?>

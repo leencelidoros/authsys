@@ -1,21 +1,24 @@
 <?php
-session_start();
-include 'functions.php';
+require 'session.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $name = $_POST['name'];
-    $phone = $_POST['phone'];
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-    $confirmPassword = $_POST['confirmPassword'];
-    $normalizedPhone = normalizePhoneNumber($phone); // Normalize the phone number
+    $name = trim($_POST['name']);
+    $phone = trim($_POST['phone']);
+    $email = trim($_POST['email']);
+    $password = trim($_POST['password']);
+    $confirmPassword = trim($_POST['confirmPassword']);
+    $normalizedPhone = normalizePhoneNumber($phone); 
 
-    // Validation 
+    $formattedPhone = "+254" . ltrim($normalizedPhone, '0');
+
+    // Validation
     $nameError = isNotEmpty($name, 'Name');
     $emailError = isValidEmail($email);
     $passwordError = isStrongPassword($password);
-    
-    if ($nameError) {
+
+    if (empty($name) || empty($email) || empty($password)) {
+        $_SESSION['alert'] = "Name, email, and password are required.";
+    } elseif ($nameError) {
         $_SESSION['alert'] = "Name is required.";
     } elseif ($emailError) {
         $_SESSION['alert'] = "Invalid email address.";
@@ -23,9 +26,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['alert'] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
     } elseif ($password !== $confirmPassword) {
         $_SESSION['alert'] = "Passwords do not match.";
-    } elseif (!$normalizedPhone) { // Check the normalized phone number
+    } elseif (!$normalizedPhone) {
         $_SESSION['alert'] = "Invalid phone number.";
     } else {
+        $cleanedUserData = cleanUserTable([
+            [
+                'name' => $name,
+                'phone' => $normalizedPhone, 
+                'email' => $email,
+                'password' => $password
+            ]
+        ]);
+
+        $cleanedUser = $cleanedUserData[0];
+
         // Database conn
         $servername = "localhost";
         $username = "root";
@@ -39,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             // email unique
             $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
             $stmt = $conn->prepare($checkEmailSQL);
-            $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+            $stmt->bindParam(':email', $cleanedUser['email'], PDO::PARAM_STR);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
@@ -48,22 +62,20 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 // phone unique
                 $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
                 $stmtPhone = $conn->prepare($checkPhoneSQL);
-                $stmtPhone->bindParam(':phone', $normalizedPhone, PDO::PARAM_STR); // Use the normalized phone number
+                $stmtPhone->bindParam(':phone', $cleanedUser['phone'], PDO::PARAM_STR); // Use the cleaned phone number
                 $stmtPhone->execute();
 
                 if ($stmtPhone->rowCount() > 0) {
                     $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
                 } else {
-                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
                     // Insert in db 
                     $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
                     $stmt = $conn->prepare($insertSQL);
 
-                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-                    $stmt->bindParam(':phone', $normalizedPhone, PDO::PARAM_STR);// +254
-                    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                    $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+                    $stmt->bindParam(':name', $cleanedUser['name'], PDO::PARAM_STR);
+                    $stmt->bindParam(':phone', $cleanedUser['phone'], PDO::PARAM_STR);
+                    $stmt->bindParam(':email', $cleanedUser['email'], PDO::PARAM_STR);
+                    $stmt->bindParam(':password', $cleanedUser['password'], PDO::PARAM_STR);
 
                     $stmt->execute();
 
@@ -78,8 +90,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
-
 
 
 <!DOCTYPE html>

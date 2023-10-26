@@ -1,12 +1,14 @@
 <?php
-session_start();
+require 'session.php';
 
-if (!isset($_SESSION['user'])) {
-    header("Location: login.php");
-    exit();
-}
+session_unset();
 
+// destroy the session
 session_destroy();
+
+
+setcookie("authid", "", time() - 3600);
+
 header("Location: login.php?logout=1");
 exit();
 ?>
