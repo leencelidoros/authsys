@@ -30,6 +30,25 @@ function normalizePhoneNumber($phone) {
 
     return $phone;
 }
+function storeActivityInDatabase($user_id, $activity, $ip_address) {
+    $servername = "localhost";
+    $username = "root";
+    $dbpassword = "";
+    $database = "auth";
+    try {
+        $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
+        $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+        $insertActivitySQL = "INSERT INTO audit_logs (user_id, activity, ip_address) VALUES (:user_id, :activity, :ip_address)";
+        $stmt = $conn->prepare($insertActivitySQL);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->bindParam(':activity', $activity, PDO::PARAM_STR);
+        $stmt->bindParam(':ip_address', $ip_address, PDO::PARAM_STR);
+        $stmt->execute();
+    } catch (PDOException $e) {
+        echo "Error storing activity in the database: " . $e->getMessage();
+    }
+}
 
 ?>
 
