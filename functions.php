@@ -20,13 +20,19 @@ function isStrongPassword($password) {
     }
     return null; 
 }
-function validatePhoneNumber($phone) {
-    $phone = preg_replace("/[^0-9]/", "", $phone);
-    if (strlen($phone) !== 10 || substr($phone, 0, 3) !== '254') {
-        return "Invalid phone number format. It should start with '254' and have 10 digits.";
+function normalizePhoneNumber($phone) {
+    $phone = preg_replace('/\D/', '', $phone);
+    if (substr($phone, 0, 1) === '0') {
+        $phone = '254' . substr($phone, 1);
+    } elseif (substr($phone, 0, 1) === '+') {
+        $phone = '254' . substr($phone, 1);
     }
-    return null; 
+
+    return $phone;
 }
 
-
 ?>
+
+
+
+

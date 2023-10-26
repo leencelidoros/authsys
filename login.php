@@ -21,13 +21,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         if ($userData) {
             if (password_verify($enteredPassword, $userData['password'])) {
-                // Set a session variable
+                
                 $_SESSION['user'] = $userData['email'];
                 $_SESSION['user_name'] = $userData['name'];
 
                 if (isset($_POST['remember_me'])) {
                     
-                    // If "Remember Me" is checked, set a cookie with the email.
+                    
                     setcookie("email", $enteredEmail, time() + 30 * 24 * 3600, "/");
                 
                 }

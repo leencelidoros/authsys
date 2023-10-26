@@ -8,19 +8,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $email = $_POST['email'];
     $password = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
+    $normalizedPhone = normalizePhoneNumber($phone); // Normalize the phone number
 
-    // Validate user input
+    // Validation 
     $nameError = isNotEmpty($name, 'Name');
     $emailError = isValidEmail($email);
     $passwordError = isStrongPassword($password);
-
-    // Validate phone number
-    $phoneError = validatePhoneNumber($phone);
-
-    if ($nameError || $emailError || $passwordError || $password !== $confirmPassword || $phoneError) {
-        $_SESSION['alert'] = "Registration failed. Please check your input.";
+    
+    if ($nameError) {
+        $_SESSION['alert'] = "Name is required.";
+    } elseif ($emailError) {
+        $_SESSION['alert'] = "Invalid email address.";
+    } elseif ($passwordError) {
+        $_SESSION['alert'] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
+    } elseif ($password !== $confirmPassword) {
+        $_SESSION['alert'] = "Passwords do not match.";
+    } elseif (!$normalizedPhone) { // Check the normalized phone number
+        $_SESSION['alert'] = "Invalid phone number.";
     } else {
-        // Validation passed, check if the email and phone already exist in the database.
+        // Database conn
         $servername = "localhost";
         $username = "root";
         $dbpassword = "";
@@ -30,45 +36,49 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
+            // email unique
             $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
             $stmt = $conn->prepare($checkEmailSQL);
             $stmt->bindParam(':email', $email, PDO::PARAM_STR);
             $stmt->execute();
-            
-            $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
-            $stmtPhone = $conn->prepare($checkPhoneSQL);
-            $stmtPhone->bindParam(':phone', $phone, PDO::PARAM_STR);
-            $stmtPhone->execute();
 
             if ($stmt->rowCount() > 0) {
-              
                 $_SESSION['alert'] = "Email is already taken. Please choose another email.";
-            } elseif ($stmtPhone->rowCount() > 0) {
-                $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
             } else {
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-                $formattedPhone = '254' . substr($phone, -9); 
+                // phone unique
+                $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
+                $stmtPhone = $conn->prepare($checkPhoneSQL);
+                $stmtPhone->bindParam(':phone', $normalizedPhone, PDO::PARAM_STR); // Use the normalized phone number
+                $stmtPhone->execute();
 
-                $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
-                $stmt = $conn->prepare($insertSQL);
+                if ($stmtPhone->rowCount() > 0) {
+                    $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
+                } else {
+                    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-                $stmt->bindParam(':name', $name, PDO::PARAM_STR);
-                $stmt->bindParam(':phone', $formattedPhone, PDO::PARAM_STR);
-                $stmt->bindParam(':email', $email, PDO::PARAM_STR);
-                $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
+                    // Insert in db 
+                    $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
+                    $stmt = $conn->prepare($insertSQL);
 
-                $stmt->execute();
+                    $stmt->bindParam(':name', $name, PDO::PARAM_STR);
+                    $stmt->bindParam(':phone', $normalizedPhone, PDO::PARAM_STR);// +254
+                    $stmt->bindParam(':email', $email, PDO::PARAM_STR);
+                    $stmt->bindParam(':password', $hashedPassword, PDO::PARAM_STR);
 
-                $_SESSION['alert'] = "Registration successful!";
-                header("Location: login.php"); 
-                exit();
+                    $stmt->execute();
+
+                    $_SESSION['alert'] = "Registration successful!";
+                    header("Location: login.php");
+                    exit();
+                }
             }
         } catch (PDOException $e) {
-            $_SESSION['alert'] = "An error occurred. Please try again.";
+            $_SESSION['alert'] = "An error occurred: " . $e->getMessage();
         }
     }
 }
 ?>
+
 
 
 
@@ -110,7 +120,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="form-group row mt-2 mb-2">
                                 <label for="phone" class="col-sm-3 col-form-label">Phone</label>
                                 <div class="col-sm-9">
-                                    <input type="tel" class="form-control" id="phone" name="phone" required>
+                                    <input type="text" class="form-control" id="phone" name="phone" required>
                                 </div>
                             </div>
                             <div class="form-group row mt-2 mb-2">
