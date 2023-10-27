@@ -1,7 +1,6 @@
 <?php
 require 'session.php';
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = trim($_POST['email']);
     $enteredPassword = $_POST['password'];
@@ -32,6 +31,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     setcookie('authid', encrypt($userData['email'], 'qwerty'), time() + 3600 * 24 * 30, '/', null, true, true);
                 }
 
+                // Set a success message
+                $_SESSION['success_message'] = "Login successful";
+
                 header("Location: home.php");
                 exit();
             } else {
@@ -44,7 +46,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         echo "Error: " . $e->getMessage();
     }
 }
-
 ?>
 
 
@@ -65,6 +66,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <p class="h4 card-title text-center">Login Page</p>
                     </div>
                     <div class="card-body">
+                    <?php
+                        if (isset($_SESSION['success_message'])) {
+                            echo '<div id="success-alert" class="alert alert-warning alert-dismissible fade show" role="alert">';
+                            echo $_SESSION['success_message'];
+                            echo '<button type="button" class="close" data-dismiss="alert" aria-label="Close">';
+                            echo '<span aria-hidden="true">&times;</span>';
+                            echo '</button>';
+                            echo '</div>';
+                            unset($_SESSION['success_message']);
+                        }
+                    ?>
                         <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">
                             <div class="form-group mb-2">
                                 <label for="email">Email</label>
@@ -94,5 +106,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
     </div>
     <script src="js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var successAlert = document.getElementById('success-alert');
+            if (successAlert) {
+                successAlert.addEventListener('click', function () {
+                    successAlert.style.display = 'none';
+                });
+            }
+        });
+        </script>
 </body>
 </html>

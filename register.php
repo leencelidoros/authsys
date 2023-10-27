@@ -1,13 +1,12 @@
 <?php
 require 'session.php';
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = trim($_POST['name']);
     $phone = trim($_POST['phone']);
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
     $confirmPassword = trim($_POST['confirmPassword']);
-    $normalizedPhone = normalizePhoneNumber($phone); 
+    $normalizedPhone = normalizePhoneNumber($phone);
 
     $formattedPhone = "+254" . ltrim($normalizedPhone, '0');
 
@@ -32,7 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $cleanedUserData = cleanUserTable([
             [
                 'name' => $name,
-                'phone' => $normalizedPhone, 
+                'phone' => $normalizedPhone,
                 'email' => $email,
                 'password' => $password
             ]
@@ -68,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 if ($stmtPhone->rowCount() > 0) {
                     $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
                 } else {
-                    // Insert in db 
+                    // Insert in db
                     $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
                     $stmt = $conn->prepare($insertSQL);
 
@@ -79,7 +78,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                     $stmt->execute();
 
-                    $_SESSION['alert'] = "Registration successful!";
+                    // Set a success message
+                    
+                    $_SESSION['success'] = "Registration successful!";
                     header("Location: login.php");
                     exit();
                 }
@@ -90,7 +91,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
 }
 ?>
-
 
 <!DOCTYPE html>
 <html lang="en">
@@ -108,18 +108,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="card-header text-center">
                         <h3>Register</h3>
                     </div>
-                    <div class="card-body bg-body-secondary">
-                    <div id="alertDiv" class="alert 
-                    <?php echo isset($_SESSION['alert']) ? 'alert-success' : 'd-none'; ?>
-                    " role="alert">
                         <?php
-                        if (isset($_SESSION['alert'])) {
-                            echo $_SESSION['alert'];
-                            unset($_SESSION['alert']); 
+                        if (isset($_SESSION['success'])) {
+                            echo '<div class="alert alert-success">' . $_SESSION['success'] . '</div>';
+                            unset($_SESSION['success']);
                         }
                         ?>
-                        
-                    </div>
+
+
+                    <div class="card-body bg-body-secondary">
                     <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">
                             <div class="form-group row mt-2 mb-2">
                                 <label for="name" class="col-sm-3 col-form-label">Name</label>
@@ -162,10 +159,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </form>
                     </div>
                 </div>
-            </div>
         </div>
     </div>
 
     <script src="/js/bootstrap.bundle.min.js"></script>
+    
 </body>
 </html>

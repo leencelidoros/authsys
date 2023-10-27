@@ -9,6 +9,6 @@ session_destroy();
 
 setcookie("authid", "", time() - 3600);
 
-header("Location: login.php?logout=1");
+header("Location: index.php");
 exit();
 ?>
