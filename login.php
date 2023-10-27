@@ -3,7 +3,7 @@ require 'session.php';
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $enteredEmail = $_POST['email'];
+    $enteredEmail = trim($_POST['email']);
     $enteredPassword = $_POST['password'];
 
     try {
@@ -22,9 +22,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if ($userData) {
             if (password_verify($enteredPassword, $userData['password'])) {
                 $_SESSION['user'] = $userData;
-            
 
                 if (isset($_POST['remember_me'])) {
+                    $user_id = $userData['id'];
+                    $ip_address = $_SERVER['REMOTE_ADDR'];
+                    // store in db
+                    storeActivityInDatabase($user_id, $token, "Logged in remember me", $ip_address);
                     // Generate a secure token
                     setcookie('authid', encrypt($userData['email'], 'qwerty'), time() + 3600 * 24 * 30, '/', null, true, true);
                 }
