@@ -29,12 +29,11 @@ if (!function_exists('normalizePhoneNumber')) {
     function normalizePhoneNumber($phone) {
         $phone = preg_replace('/\D/', '', $phone);
 
-        // If the phone number starts with "254" or "+254", keep it as is
+        // If the phone number starts with "254" or "+254"
         if (substr($phone, 0, 3) === '254' || substr($phone, 0, 4) === '+254') {
             return $phone;
         }
-
-        // If it doesn't start with "254" or "+254", add "254" as the prefix
+// add 254 
         return '254' . $phone;
     }
 }
