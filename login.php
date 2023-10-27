@@ -62,19 +62,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card">
+                     <?php
+                        if (isset($_SESSION['success'])) {
+                            echo '<div class="alert alert-success">' . $_SESSION['success'] . '</div>';
+                            unset($_SESSION['success']);
+                        }
+                        ?>
                     <div class="card-header">
                         <p class="h4 card-title text-center">Login Page</p>
                     </div>
                     <div class="card-body">
                     <?php
-                        if (isset($_SESSION['success_message'])) {
-                            echo '<div id="success-alert" class="alert alert-warning alert-dismissible fade show" role="alert">';
-                            echo $_SESSION['success_message'];
+                        if (isset($_SESSION['success'])) {
+                            echo '<div id="success-alert" class="alert alert-success" role="alert">';
+                            echo $_SESSION['success'];
                             echo '<button type="button" class="close" data-dismiss="alert" aria-label="Close">';
                             echo '<span aria-hidden="true">&times;</span>';
                             echo '</button>';
                             echo '</div>';
-                            unset($_SESSION['success_message']);
+                            unset($_SESSION['success']);
                         }
                     ?>
                         <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">

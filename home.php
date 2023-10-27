@@ -17,42 +17,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
-        $user_id = $_SESSION['user']['email']; 
-        $upload_dir = 'images/profileimages/'; 
+        $user_id = $_SESSION['user']['email'];
+        $upload_dir = 'images/profileimages/';
         $uploaded_file = $upload_dir . basename($_FILES['profile_image']['name']);
 
-        if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploaded_file)) {
-            $sql = "UPDATE users SET profile_image_path = :profile_image_path WHERE email = :email";
+        $allowedExtensions = array("jpg", "jpeg", "png");
+        $fileExtension = pathinfo($_FILES['profile_image']['name'], PATHINFO_EXTENSION);
 
-            // Prepare the SQL query
-            $stmt = $pdo->prepare($sql);
+        if (in_array(strtolower($fileExtension), $allowedExtensions)) {
+            if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploaded_file)) {
+                $sql = "UPDATE users SET profile_image_path = :profile_image_path WHERE email = :email";
+                $defaultAvatar = 'images/avatar.jpg';
 
-            // Bind parameters
-            $stmt->bindParam(':profile_image_path', $uploaded_file, PDO::PARAM_STR);
-            $stmt->bindParam(':email', $user_id, PDO::PARAM_STR);
+                // Prepare the SQL query
+                $stmt = $pdo->prepare($sql);
 
-            // Execute the query
-            if ($stmt->execute()) {
-                $_SESSION['user']['profile_image_path'] = $uploaded_file;
-                $successMessage = "Profile image updated successfully.";
+                // Bind parameters
+                $stmt->bindParam(':profile_image_path', $uploaded_file, PDO::PARAM_STR);
+                $stmt->bindParam(':email', $user_id, PDO::PARAM_STR);
+
+                // Execute the query
+                if ($stmt->execute()) {
+                    $_SESSION['user']['profile_image_path'] = $uploaded_file;
+                    $successMessage = "Profile image updated successfully.";
+                } else {
+                    $successMessage = "Error updating profile image in the database.";
+                }
             } else {
-                $successMessage = "Error updating profile image in the database.";
+                $successMessage = "Failed to move the uploaded file.";
             }
         } else {
-            $successMessage = "Failed to move the uploaded file.";
+            $successMessage = "Invalid file type. Allowed extensions: " . implode(", ", $allowedExtensions);
         }
     } else {
         $successMessage = "Error during file upload. Error code: " . $_FILES['profile_image']['error'];
     }
 
     $_SESSION['success_message'] = $successMessage;
-}
 
-if (empty($_SESSION['user']['profile_image_path'])) {
-    $defaultAvatar = 'images/avatar.jpg';
-    $_SESSION['user']['profile_image_path'] = $defaultAvatar;
+    if (empty($_SESSION['user']['profile_image_path'])) {
+        $defaultAvatar = 'images/avatar.jpg';
+        $_SESSION['user']['profile_image_path'] = $defaultAvatar;
+    }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

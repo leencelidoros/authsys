@@ -22,8 +22,6 @@ if (isset($_COOKIE['authid']) && !isset($_SESSION['user'])) {
             $_SESSION['user'] = $userData;
         }
 }
-
-
 //if user is logged in (has a session) and is tryng to access a guest page, redirect to home page
 if (isset($_SESSION['user']) && ($_SERVER['SCRIPT_NAME']  == '/login.php' || $_SERVER['SCRIPT_NAME']  == '/register.php' || $_SERVER['SCRIPT_NAME']  == '/index.php')) {
     header("Location: home.php");
