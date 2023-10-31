@@ -123,7 +123,7 @@ function formatPhoneNumber($phoneNumber, $phoneNumberUtil) {
         $formattedNumber = ltrim($formattedNumber, '+');
         return $formattedNumber;
     } catch (\libphonenumber\NumberParseException $e) {
-        return null; // Return null for an invalid phone number
+        return null; 
     }
 }
 

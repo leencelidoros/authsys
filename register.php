@@ -1,9 +1,9 @@
 <?php
 
 require 'session.php';
-require 'src/dbconnect.php'; // Include the database connection code
+require 'src/dbconnect.php'; 
 
-require 'vendor/autoload.php'; // Include the Composer autoloader
+require 'vendor/autoload.php';
 
 use libphonenumber\PhoneNumberUtil;
 use libphonenumber\PhoneNumberFormat;
@@ -17,8 +17,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = trim($_POST['password']);
     $confirmPassword = trim($_POST['confirmPassword']);
 
-    // Format the phone number
-    $formattedPhone = formatPhoneNumber($phone, $phoneNumberUtil);
+    $phoneNumber = $phoneNumberUtil->parse($phone, 'KE');
+
+    if ($phoneNumberUtil->isValidNumber($phoneNumber)) {
+        $formattedPhone = $phoneNumberUtil->format($phoneNumber, PhoneNumberFormat::E164);
+        $formattedPhone = ltrim($formattedPhone, '+');
+    } else {
+        // If the number is no is not ke
+        $formattedPhone = '+' . $phone;
+    }
 
     // Validation
     $nameError = isNotEmpty($name, 'Name');
@@ -35,21 +42,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['alert'] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
     } elseif ($password !== $confirmPassword) {
         $_SESSION['alert'] = "Passwords do not match.";
-    } elseif (!$formattedPhone) {
-        $_SESSION['alert'] = "Invalid phone number.";
-    } else  {
+    } else {
         $cleanedUserData = cleanUserTable([
             [
                 'name' => $name,
-                'phone' => $normalizedPhone,
+                'phone' => $formattedPhone,
                 'email' => $email,
-                'password' => $password
-            ]
+                'password' => $password,
+            ],
         ]);
 
-        $cleanedUser = $cleanedUserData[0];
-
-        // Database conn
         $servername = "localhost";
         $username = "root";
         $dbpassword = "";
@@ -59,37 +61,32 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
             $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-            // email unique
             $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
             $stmt = $conn->prepare($checkEmailSQL);
-            $stmt->bindParam(':email', $cleanedUser['email'], PDO::PARAM_STR);
+            $stmt->bindParam(':email', $cleanedUserData[0]['email'], PDO::PARAM_STR);
             $stmt->execute();
 
             if ($stmt->rowCount() > 0) {
                 $_SESSION['alert'] = "Email is already taken. Please choose another email.";
             } else {
-                // phone unique
                 $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
                 $stmtPhone = $conn->prepare($checkPhoneSQL);
-                $stmtPhone->bindParam(':phone', $cleanedUser['phone'], PDO::PARAM_STR); // Use the cleaned phone number
+                $stmtPhone->bindParam(':phone', $cleanedUserData[0]['phone'], PDO::PARAM_STR);
                 $stmtPhone->execute();
 
                 if ($stmtPhone->rowCount() > 0) {
                     $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
                 } else {
-                    // Insert in db
                     $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
                     $stmt = $conn->prepare($insertSQL);
 
-                    $stmt->bindParam(':name', $cleanedUser['name'], PDO::PARAM_STR);
-                    $stmt->bindParam(':phone', $cleanedUser['phone'], PDO::PARAM_STR);
-                    $stmt->bindParam(':email', $cleanedUser['email'], PDO::PARAM_STR);
-                    $stmt->bindParam(':password', $cleanedUser['password'], PDO::PARAM_STR);
+                    $stmt->bindParam(':name', $cleanedUserData[0]['name'], PDO::PARAM_STR);
+                    $stmt->bindParam(':phone', $cleanedUserData[0]['phone'], PDO::PARAM_STR);
+                    $stmt->bindParam(':email', $cleanedUserData[0]['email'], PDO::PARAM_STR);
+                    $stmt->bindParam(':password', $cleanedUserData[0]['password'], PDO::PARAM_STR);
 
                     $stmt->execute();
 
-                    // Set a success message
-                    
                     $_SESSION['success'] = "Registration successful!";
                     header("Location: login.php");
                     exit();
@@ -100,6 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 }
+
 ?>
 
 <!DOCTYPE html>
@@ -123,8 +121,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             echo '<div class="alert alert-success">' . $_SESSION['success'] . '</div>';
                             unset($_SESSION['success']);
                         }
+                        if (isset($_SESSION['alert'])) {
+                            echo '<div class="alert alert-danger">' . $_SESSION['alert'] . '</div>';
+                            unset($_SESSION['alert']);
+                        }
                         ?>
-
 
                     <div class="card-body bg-body-secondary">
                     <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">
@@ -163,7 +164,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                     <button type="submit" class="btn btn-primary">Register</button>
                                 </div>
                                 <div class="col-sm-9 offset-sm-3">
-                                    <a href="/login.php" class="link-info">Already have an Account .Click here to login</a>
+                                    <a href="/login.php" class="link-info">Already have an Account. Click here to login</a>
                                 </div>
                             </div>
                         </form>
@@ -173,6 +174,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </div>
 
     <script src="/js/bootstrap.bundle.min.js"></script>
-    
 </body>
 </html>
