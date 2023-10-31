@@ -1,0 +1,22 @@
+{
+    "name": "leence/dbconnect",
+    "description": "database connectiong",
+    "type": "project",
+    "license": "mti",
+    "autoload": {
+        "psr-4": {
+            "Leence\\Dbconnect\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Leence Lidoros",
+            "email": "leencelidonde00@gmail.com"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "ufukdogan92/pdo-db-connect": "dev-master",
+        "giggsey/libphonenumber-for-php": "^8.0@dev"
+    }
+}

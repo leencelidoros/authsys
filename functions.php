@@ -1,4 +1,5 @@
 <?php
+
 if (!function_exists('isNotEmpty')) {
     function isNotEmpty($value, $field) {
         if (empty($value)) {
@@ -111,6 +112,22 @@ function cleanUserTable($userTable) {
 
     return $cleanedData;
 }
+use libphonenumber\PhoneNumberFormat;
+
+function formatPhoneNumber($phoneNumber, $phoneNumberUtil) {
+    $phoneNumberString = $phoneNumber;
+
+    try {
+        $numberProto = $phoneNumberUtil->parse($phoneNumberString, 'KE');
+        $formattedNumber = $phoneNumberUtil->format($numberProto, PhoneNumberFormat::E164);
+        $formattedNumber = ltrim($formattedNumber, '+');
+        return $formattedNumber;
+    } catch (\libphonenumber\NumberParseException $e) {
+        return null; // Return null for an invalid phone number
+    }
+}
+
+
 
 
 ?>

@@ -1,14 +1,24 @@
 <?php
+
 require 'session.php';
+require 'src/dbconnect.php'; // Include the database connection code
+
+require 'vendor/autoload.php'; // Include the Composer autoloader
+
+use libphonenumber\PhoneNumberUtil;
+use libphonenumber\PhoneNumberFormat;
+
+$phoneNumberUtil = PhoneNumberUtil::getInstance();
+
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $name = trim($_POST['name']);
     $phone = trim($_POST['phone']);
     $email = trim($_POST['email']);
     $password = trim($_POST['password']);
     $confirmPassword = trim($_POST['confirmPassword']);
-    $normalizedPhone = normalizePhoneNumber($phone);
 
-    $formattedPhone = "+254" . ltrim($normalizedPhone, '0');
+    // Format the phone number
+    $formattedPhone = formatPhoneNumber($phone, $phoneNumberUtil);
 
     // Validation
     $nameError = isNotEmpty($name, 'Name');
@@ -25,9 +35,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $_SESSION['alert'] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
     } elseif ($password !== $confirmPassword) {
         $_SESSION['alert'] = "Passwords do not match.";
-    } elseif (!$normalizedPhone) {
+    } elseif (!$formattedPhone) {
         $_SESSION['alert'] = "Invalid phone number.";
-    } else {
+    } else  {
         $cleanedUserData = cleanUserTable([
             [
                 'name' => $name,
