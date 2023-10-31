@@ -2,16 +2,12 @@
 require 'session.php';
 require 'src/dbconnect.php'; 
 
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\DBALException;
+
 $successMessage = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-
-    try {
-        $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (Aura\SqlQueryException $e) {
-        $_SESSION['alert'] = "An error occurred: " . $e->getMessage();
-    }
-
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {
         $user_id = $_SESSION['user']['email'];
         $upload_dir = 'images/profileimages/';
@@ -23,21 +19,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (in_array(strtolower($fileExtension), $allowedExtensions)) {
             if (move_uploaded_file($_FILES['profile_image']['tmp_name'], $uploaded_file)) {
                 $sql = "UPDATE users SET profile_image_path = :profile_image_path WHERE email = :email";
-                $defaultAvatar = 'images/avatar.jpg';
 
-                // Prepare the SQL query
-                $stmt = $pdo->prepare($sql);
-
-                // Bind parameters
-                $stmt->bindParam(':profile_image_path', $uploaded_file, PDO::PARAM_STR);
-                $stmt->bindParam(':email', $user_id, PDO::PARAM_STR);
-
-                // Execute the query
-                if ($stmt->execute()) {
-                    $_SESSION['user']['profile_image_path'] = $uploaded_file;
-                    $successMessage = "Profile image updated successfully.";
-                } else {
-                    $successMessage = "Error updating profile image in the database.";
+                try {
+                    $stmt = $conn->executeQuery($sql, [
+                        'profile_image_path' => $uploaded_file,
+                        'email' => $user_id,
+                    ]);
+                    
+                    $affectedRows = $stmt->rowCount();
+                    
+                    
+                    if ($affectedRows > 0) {
+                        $_SESSION['user']['profile_image_path'] = $uploaded_file;
+                        $successMessage = "Profile image updated successfully.";
+                    } else {
+                        $successMessage = "Error updating profile image in the database.";
+                    }
+                } catch (DBALException $e) {
+                    $successMessage = "Error executing the database query: " . $e->getMessage();
                 }
             } else {
                 $successMessage = "Failed to move the uploaded file.";
@@ -50,14 +49,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $_SESSION['success_message'] = $successMessage;
-
-    if (empty($_SESSION['user']['profile_image_path'])) {
-        $defaultAvatar = 'images/avatar.jpg';
-        $_SESSION['user']['profile_image_path'] = $defaultAvatar;
-    }
 }
-?>
 
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
