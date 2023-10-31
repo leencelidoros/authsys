@@ -1,10 +1,9 @@
 <?php
-
 require 'session.php';
-require 'src/dbconnect.php'; 
-
+require 'src/dbconnect.php';
 require 'vendor/autoload.php';
 
+use Doctrine\DBAL\DriverManager;
 use libphonenumber\PhoneNumberUtil;
 use libphonenumber\PhoneNumberFormat;
 
@@ -23,10 +22,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $formattedPhone = $phoneNumberUtil->format($phoneNumber, PhoneNumberFormat::E164);
         $formattedPhone = ltrim($formattedPhone, '+');
     } else {
-        // If the number is no is not ke
+        // If the number is not from KE
         $formattedPhone = '+' . $phone;
     }
-
+    
     // Validation
     $nameError = isNotEmpty($name, 'Name');
     $emailError = isValidEmail($email);
@@ -51,50 +50,44 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 'password' => $password,
             ],
         ]);
-
-        $servername = "localhost";
-        $username = "root";
-        $dbpassword = "";
-        $database = "auth";
-
         try {
-            $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
-            $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            // $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
+           $checkEmailSQL= $conn->executeQuery('SELECT * FROM users WHERE email = :email', ['email' => $email], ['email' => 'string']);
 
-            $checkEmailSQL = "SELECT * FROM users WHERE email = :email";
-            $stmt = $conn->prepare($checkEmailSQL);
-            $stmt->bindParam(':email', $cleanedUserData[0]['email'], PDO::PARAM_STR);
-            $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
+            if ($checkEmailSQL->rowCount() > 0) {
                 $_SESSION['alert'] = "Email is already taken. Please choose another email.";
             } else {
-                $checkPhoneSQL = "SELECT * FROM users WHERE phone = :phone";
-                $stmtPhone = $conn->prepare($checkPhoneSQL);
-                $stmtPhone->bindParam(':phone', $cleanedUserData[0]['phone'], PDO::PARAM_STR);
-                $stmtPhone->execute();
-
+                $stmtPhone = $conn->executeQuery('SELECT * FROM users WHERE phone = :phone', ['phone' => $cleanedUserData[0]['phone']], ['phone' => 'string']);
+            
                 if ($stmtPhone->rowCount() > 0) {
                     $_SESSION['alert'] = "Phone number is already taken. Please choose another phone number.";
                 } else {
                     $insertSQL = "INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)";
-                    $stmt = $conn->prepare($insertSQL);
-
-                    $stmt->bindParam(':name', $cleanedUserData[0]['name'], PDO::PARAM_STR);
-                    $stmt->bindParam(':phone', $cleanedUserData[0]['phone'], PDO::PARAM_STR);
-                    $stmt->bindParam(':email', $cleanedUserData[0]['email'], PDO::PARAM_STR);
-                    $stmt->bindParam(':password', $cleanedUserData[0]['password'], PDO::PARAM_STR);
-
-                    $stmt->execute();
-
+                    $stmt = $conn->executeQuery('INSERT INTO users (name, phone, email, password) VALUES (:name, :phone, :email, :password)', [
+                        'name' => $cleanedUserData[0]['name'],
+                        'phone' => $cleanedUserData[0]['phone'],
+                        'email' => $cleanedUserData[0]['email'],
+                        'password' => $cleanedUserData[0]['password'],
+                    ], [
+                        'name' => \Doctrine\DBAL\ParameterType::STRING,
+                        'phone' => \Doctrine\DBAL\ParameterType::STRING,
+                        'email' => \Doctrine\DBAL\ParameterType::STRING,
+                        'password' => \Doctrine\DBAL\ParameterType::STRING,
+                    ]);
+                    
+            
+            
+            
+        
                     $_SESSION['success'] = "Registration successful!";
                     header("Location: login.php");
                     exit();
                 }
             }
         } catch (PDOException $e) {
-            $_SESSION['alert'] = "An error occurred: " . $e->getMessage();
+            $_SESSION['alert'] = "Database error: " . $e->getMessage();
         }
+        
     }
 }
 
@@ -130,7 +123,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <div class="card-body bg-body-secondary">
                     <form method="POST" action="<?php echo $_SERVER['PHP_SELF']; ?>">
                             <div class="form-group row mt-2 mb-2">
-                                <label for="name" class="col-sm-3 col-form-label">Name</label>
+                                <label for "name" class="col-sm-3 col-form-label">Name</label>
                                 <div class="col-sm-9">
                                     <input type="text" class="form-control" id="name" name="name" required>
                                 </div>
@@ -170,6 +163,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         </form>
                     </div>
                 </div>
+            </div>
         </div>
     </div>
 

@@ -1,19 +1,15 @@
 <?php
 require 'session.php';
+require 'src/dbconnect.php'; 
 
 $successMessage = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $servername = "localhost";
-    $database = "auth";
-    $username = "root";
-    $password = "";
 
     try {
-        $pdo = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
         $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    } catch (PDOException $e) {
-        die("Database connection failed: " . $e->getMessage());
+    } catch (Aura\SqlQueryException $e) {
+        $_SESSION['alert'] = "An error occurred: " . $e->getMessage();
     }
 
     if (isset($_FILES['profile_image']) && $_FILES['profile_image']['error'] === UPLOAD_ERR_OK) {

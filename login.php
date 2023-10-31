@@ -1,23 +1,17 @@
 <?php
 require 'session.php';
+require 'src/dbconnect.php'; 
+require 'vendor/autoload.php';
+
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $enteredEmail = trim($_POST['email']);
     $enteredPassword = $_POST['password'];
 
     try {
-        $servername = "localhost";
-        $username = "root";
-        $dbpassword = "";
-        $database = "auth";
-
-        $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $dbpassword);
-        $stmt = $conn->prepare("SELECT * FROM users WHERE email = :email");
-        $stmt->bindParam(':email', $enteredEmail);
-        $stmt->execute();
-
-        $userData = $stmt->fetch(PDO::FETCH_ASSOC);
-
+        $stmt = $conn->executeQuery("SELECT * FROM users WHERE email = :email", ['email' => $enteredEmail], ['email' => 'string']);
+        $userData = $stmt->fetchAssociative();
+ 
         if ($userData) {
             if (password_verify($enteredPassword, $userData['password'])) {
                 $_SESSION['user'] = $userData;
@@ -43,10 +37,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $errorMessage = "User not found. Please try again.";
         }
     } catch (PDOException $e) {
-        echo "Error: " . $e->getMessage();
+        $_SESSION['alert'] = "An error occurred: " . $e->getMessage();
     }
 }
 ?>
+
 
 
 <!DOCTYPE html>

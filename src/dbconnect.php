@@ -1,13 +1,20 @@
 <?php
 
-$servername = "localhost";
-$username = "root";
-$password = "";
-$database = "auth";
+require 'vendor/autoload.php';
+
+use Doctrine\DBAL\DriverManager;
+
+    $config = [
+        'driver' => 'pdo_mysql',
+        'user' => 'root',
+        'password' => '',
+        'dbname' => 'auth',
+        'host' => 'localhost',
+    ];
 
 try {
-    $conn = new PDO("mysql:host=$servername;dbname=$database", $username, $password);
-    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-} catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    $conn = DriverManager::getConnection($config);
+
+} catch (Exception $e) {
+    die("Database error: " . $e->getMessage());
 }
